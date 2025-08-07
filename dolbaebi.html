@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dolbaebi Salary Comparison Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --accent-color: #f093fb;
+            --success-color: #4ade80;
+            --warning-color: #fbbf24;
+            --error-color: #f87171;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f9fafb;
+            --border-color: #e5e7eb;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--bg-primary);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-top: 1rem;
+        }
+
+        .timeline-card {
+            grid-column: 1 / -1;
+            margin-bottom: 3rem;
+        }
+
+        .timeline-chart {
+            height: 500px;
+        }
+
+        .salary-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .person-card {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            transition: transform 0.3s ease;
+        }
+
+        .person-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .person-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        .salary-progression {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .salary-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .salary-period {
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            flex: 1;
+        }
+
+        .salary-amount {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+        }
+
+        .icon {
+            font-size: 1.2rem;
+            margin-right: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💰 Dolbaebi Salary Dashboard</h1>
+            <p>Salary comparison and progression tracking for our friend group</p>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card fade-in">
+                <div class="metric-value" id="totalDolbaebi">6</div>
+                <div class="metric-label">Total Dolbaebi</div>
+            </div>
+            <div class="metric-card fade-in">
+                <div class="metric-value" id="averageSalary">₽0</div>
+                <div class="metric-label">Average Salary</div>
+            </div>
+            <div class="metric-card fade-in">
+                <div class="metric-value" id="highestSalary">₽0</div>
+                <div class="metric-label">Highest Salary</div>
+            </div>
+            <div class="metric-card fade-in">
+                <div class="metric-value" id="totalPayroll">₽0</div>
+                <div class="metric-label">Total Monthly Payroll</div>
+            </div>
+        </div>
+
+        <div class="dashboard">
+            <div class="card fade-in">
+                <div class="card-title">
+                    <span class="icon">📊</span>
+                    Current Salary Comparison
+                </div>
+                <div class="chart-container">
+                    <canvas id="salaryChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card fade-in">
+                <div class="card-title">
+                    <span class="icon">📈</span>
+                    Salary Distribution
+                </div>
+                <div class="chart-container">
+                    <canvas id="distributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="card timeline-card fade-in">
+            <div class="card-title">
+                <span class="icon">📅</span>
+                Salary Timeline & Progression
+            </div>
+            <div class="chart-container timeline-chart">
+                <canvas id="timelineChart"></canvas>
+            </div>
+        </div>
+
+        <div class="salary-list">
+            <div class="person-card fade-in">
+                <div class="person-name">👨‍💼 Вадим</div>
+                <div class="salary-progression">
+                    <div class="salary-item">
+                        <span class="salary-period">До сентября 2024</span>
+                        <span class="salary-amount">₽0</span>
+                    </div>
+                    <div class="salary-item">
+                        <span class="salary-period">Сентябрь 2024</span>
+                        <span class="salary-amount">₽330,000</span>
+                    </div>
+                    <div class="salary-item">
+                        <span class="salary-period">Декабрь 2024</span>
+                        <span class="salary-amount">₽390,000</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="person-card fade-in">
+                <div class="person-name">👨‍💻 Тимофей</div>
+                <div class="salary-progression">
+                    <div class="salary-item">
+                        <span class="salary-period">До августа 2024</span>
+                        <span class="salary-amount">₽0</span>
+                    </div>
+                    <div class="salary-item">
+                        <span class="salary-period">Август 2024</span>
+                        <span class="salary-amount">₽70,000</span>
+                    </div>
+                    <div class="salary-item">
+                        <span class="salary-period">Август 2025</span>
+                        <span class="salary-amount">₽150,000</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="person-card fade-in">
+                <div class="person-name">👨‍🔧 Камиль</div>
+                <div class="salary-progression">
+                    <div class="salary-item">
+                        <span class="salary-period">До апреля 2025</span>
+                        <span class="salary-amount">₽0</span>
+                    </div>
+                    <div class="salary-item">
+                        <span class="salary-period">Апрель 2025</span>
+                        <span class="salary-amount">₽65,000</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="person-card fade-in">
+                <div class="person-name">👨‍🎨 Леша</div>
+                <div class="salary-progression">
+                    <div class="salary-item">
+                        <span class="salary-period">До апреля 2025</span>
+                        <span class="salary-amount">₽0</span>
+                    </div>
+                    <div class="salary-item">
+                        <span class="salary-period">Апрель 2025</span>
+                        <span class="salary-amount">₽65,000</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="person-card fade-in">
+                <div class="person-name">👨‍🚀 Ильнур</div>
+                <div class="salary-progression">
+                    <div class="salary-item">
+                        <span class="salary-period">До августа 2025</span>
+                        <span class="salary-amount">₽0</span>
+                    </div>
+                    <div class="salary-item">
+                        <span class="salary-period">Август 2025</span>
+                        <span class="salary-amount">₽35,000</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="person-card fade-in">
+                <div class="person-name">👨‍⚡ Кирилл</div>
+                <div class="salary-progression">
+                    <div class="salary-item">
+                        <span class="salary-period">До июля 2025</span>
+                        <span class="salary-amount">₽0</span>
+                    </div>
+                    <div class="salary-item">
+                        <span class="salary-period">Июль 2025</span>
+                        <span class="salary-amount">₽0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Salary data with proper date formatting
+        const salaryData = {
+            'Вадим': [
+                { period: 'До сент 2024', amount: 0, date: new Date('2024-08-01') },
+                { period: 'Сент 2024', amount: 330000, date: new Date('2024-09-01') },
+                { period: 'Дек 2024', amount: 390000, date: new Date('2024-12-01') },
+                { period: 'Дек 2025', amount: 390000, date: new Date('2025-12-01') }
+            ],
+            'Тимофей': [
+                { period: 'До авг 2024', amount: 0, date: new Date('2024-07-01') },
+                { period: 'Авг 2024', amount: 70000, date: new Date('2024-08-01') },
+                { period: 'Авг 2025', amount: 150000, date: new Date('2025-08-01') },
+                { period: 'Дек 2025', amount: 150000, date: new Date('2025-12-01') }
+            ],
+            'Камиль': [
+                { period: 'До апр 2025', amount: 0, date: new Date('2025-03-01') },
+                { period: 'Апр 2025', amount: 65000, date: new Date('2025-04-01') },
+                { period: 'Дек 2025', amount: 65000, date: new Date('2025-12-01') }
+            ],
+            'Леша': [
+                { period: 'До апр 2025', amount: 0, date: new Date('2025-03-01') },
+                { period: 'Апр 2025', amount: 65000, date: new Date('2025-04-01') },
+                { period: 'Дек 2025', amount: 65000, date: new Date('2025-12-01') }
+            ],
+            'Ильнур': [
+                { period: 'До авг 2025', amount: 0, date: new Date('2025-07-01') },
+                { period: 'Авг 2025', amount: 35000, date: new Date('2025-08-01') },
+                { period: 'Дек 2025', amount: 35000, date: new Date('2025-12-01') }
+            ],
+            'Кирилл': [
+                { period: 'До июл 2025', amount: 0, date: new Date('2025-06-01') },
+                { period: 'Июл 2025', amount: 0, date: new Date('2025-07-01') },
+                { period: 'Дек 2025', amount: 0, date: new Date('2025-12-01') }
+            ]
+        };
+
+        // Calculate metrics
+        function calculateMetrics() {
+            const currentSalaries = Object.values(salaryData).map(person => 
+                person[person.length - 1].amount
+            );
+            
+            const avgSalary = currentSalaries.reduce((a, b) => a + b, 0) / currentSalaries.length;
+            const maxSalary = Math.max(...currentSalaries);
+            const totalPayroll = currentSalaries.reduce((a, b) => a + b, 0);
+
+            document.getElementById('averageSalary').textContent = `₽${Math.round(avgSalary).toLocaleString()}`;
+            document.getElementById('highestSalary').textContent = `₽${maxSalary.toLocaleString()}`;
+            document.getElementById('totalPayroll').textContent = `₽${totalPayroll.toLocaleString()}`;
+        }
+
+        // Create current salary comparison chart
+        function createSalaryChart() {
+            const ctx = document.getElementById('salaryChart').getContext('2d');
+            const names = Object.keys(salaryData);
+            const currentSalaries = names.map(name => 
+                salaryData[name][salaryData[name].length - 1].amount
+            );
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: names,
+                    datasets: [{
+                        label: 'Current Salary (₽)',
+                        data: currentSalaries,
+                        backgroundColor: [
+                            'rgba(102, 126, 234, 0.8)',
+                            'rgba(118, 75, 162, 0.8)',
+                            'rgba(240, 147, 251, 0.8)',
+                            'rgba(74, 222, 128, 0.8)',
+                            'rgba(251, 191, 36, 0.8)',
+                            'rgba(244, 114, 182, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(102, 126, 234, 1)',
+                            'rgba(118, 75, 162, 1)',
+                            'rgba(240, 147, 251, 1)',
+                            'rgba(74, 222, 128, 1)',
+                            'rgba(251, 191, 36, 1)',
+                            'rgba(244, 114, 182, 1)'
+                        ],
+                        borderWidth: 2,
+                        borderRadius: 8,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: 'white',
+                            bodyColor: 'white',
+                            borderColor: 'rgba(102, 126, 234, 1)',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    return `₽${context.parsed.y.toLocaleString()}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '₽' + value.toLocaleString();
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create salary distribution chart
+        function createDistributionChart() {
+            const ctx = document.getElementById('distributionChart').getContext('2d');
+            const names = Object.keys(salaryData);
+            const currentSalaries = names.map(name => 
+                salaryData[name][salaryData[name].length - 1].amount
+            );
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: names,
+                    datasets: [{
+                        data: currentSalaries,
+                        backgroundColor: [
+                            'rgba(102, 126, 234, 0.8)',
+                            'rgba(118, 75, 162, 0.8)',
+                            'rgba(240, 147, 251, 0.8)',
+                            'rgba(74, 222, 128, 0.8)',
+                            'rgba(251, 191, 36, 0.8)',
+                            'rgba(244, 114, 182, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(102, 126, 234, 1)',
+                            'rgba(118, 75, 162, 1)',
+                            'rgba(240, 147, 251, 1)',
+                            'rgba(74, 222, 128, 1)',
+                            'rgba(251, 191, 36, 1)',
+                            'rgba(244, 114, 182, 1)'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: 'white',
+                            bodyColor: 'white',
+                            borderColor: 'rgba(102, 126, 234, 1)',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                    return `${context.label}: ₽${context.parsed.toLocaleString()} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create timeline chart - FIXED VERSION
+        function createTimelineChart() {
+            const ctx = document.getElementById('timelineChart').getContext('2d');
+            
+            const datasets = Object.keys(salaryData).map((name, index) => {
+                const colors = [
+                    'rgba(102, 126, 234, 1)',
+                    'rgba(118, 75, 162, 1)', 
+                    'rgba(240, 147, 251, 1)',
+                    'rgba(74, 222, 128, 1)',
+                    'rgba(251, 191, 36, 1)',
+                    'rgba(244, 114, 182, 1)'
+                ];
+                
+                return {
+                    label: name,
+                    data: salaryData[name].map(item => ({
+                        x: item.date,
+                        y: item.amount
+                    })),
+                    borderColor: colors[index],
+                    backgroundColor: colors[index].replace('1)', '0.1)'),
+                    borderWidth: 3,
+                    fill: false,
+                    tension: 0.4,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    pointBackgroundColor: colors[index],
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2
+                };
+            });
+
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true,
+                                font: {
+                                    size: 14,
+                                    weight: '500'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: 'white',
+                            bodyColor: 'white',
+                            borderColor: 'rgba(102, 126, 234, 1)',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ₽${context.parsed.y.toLocaleString()}`;
+                                },
+                                title: function(tooltipItems) {
+                                    const date = new Date(tooltipItems[0].parsed.x);
+                                    return date.toLocaleDateString('ru-RU', { 
+                                        year: 'numeric', 
+                                        month: 'long' 
+                                    });
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'month',
+                                displayFormats: {
+                                    month: 'MMM yyyy'
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Time Period',
+                                font: {
+                                    size: 14,
+                                    weight: '500'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Salary (₽)',
+                                font: {
+                                    size: 14,
+                                    weight: '500'
+                                }
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return '₽' + value.toLocaleString();
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+
+            console.log('Timeline chart created successfully!', chart);
+        }
+
+        // Initialize everything when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing charts...');
+            
+            calculateMetrics();
+            createSalaryChart();
+            createDistributionChart();
+            
+            // Add a small delay for timeline chart to ensure proper rendering
+            setTimeout(() => {
+                createTimelineChart();
+            }, 100);
+        });
+    </script>
+</body>
+</html>
